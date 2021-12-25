@@ -83,4 +83,4 @@ class DisplayModel:
         self.appraiser = appraiser.Appraiser(region=self.region_to_query, order_type=self.order_type)
 
     def delete_last_run(self):
-        self.statistics_model.delete_last_run()
+        tracker.delete_last_run()

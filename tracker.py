@@ -1,5 +1,5 @@
 import csv
-from datetime import datetime, timedelta
+from datetime import datetime
 from os.path import exists
 
 import appraiser
@@ -26,3 +26,15 @@ def save_run(appraisal: appraiser.Appraisal):
         # with open(LOOT_PATH, "a", newline='') as csvfile:
         writer.writerow({"ID": current_id, "Date": datetime.now().strftime("%d.%m.%Y %H:%M:%S"),
                          "Value": appraisal.total_value})
+
+
+def delete_last_run():
+    if not exists(LOOT_PATH):
+        raise FileNotFoundError(LOOT_PATH)
+    with open(LOOT_PATH, 'r+', newline='') as csvfile:
+        content = csvfile.read()
+        split = content.split('\n')
+        split = split[0:-2]
+        content = '\n'.join(split) + '\n'
+        with open(LOOT_PATH, 'w', newline='') as file:
+            file.write(content)
