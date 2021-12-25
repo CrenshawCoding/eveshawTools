@@ -81,4 +81,8 @@ class Appraiser:
             except ValueError:
                 print("Was not able to find item id " + repr(item_id) + " continuing.")
                 continue
-        return Appraisal(item_drops)
+        appraisal = Appraisal(item_drops)
+        if appraisal.total_value > 0:
+            return appraisal
+        else:
+            raise customExceptions.InputInvalid

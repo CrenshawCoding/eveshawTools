@@ -1,3 +1,8 @@
+<<<<<<< HEAD
 db/cached_items.csv
 db/runs.csv
 todo.txt
+=======
+/db/runs.csv
+/db/cached_items.csv
+>>>>>>> parent of 6b69585... updating gitigno

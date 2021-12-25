@@ -2,6 +2,7 @@
 import enum
 
 import appraiser
+import customExceptions
 import my_parser
 import statisticsModel
 import tracker
@@ -32,19 +33,26 @@ class DisplayModel:
         self.switch_region_to_query_button_text = None
         self.switch_region_to_query_button_color = None
         self.switch_order_type_button_text = None
+        self.valid_input = True
 
     def appraise_callback(self, loot_input_raw: str):
         parsed_loot = my_parser.parse_loot(loot_input_raw)
-        self.current_appraisal = self.appraiser.generate_appraisal(parsed_loot)
-        self.appraisal_value = self.current_appraisal.total_value
+        try:
+            self.current_appraisal = self.appraiser.generate_appraisal(parsed_loot)
+            self.appraisal_value = self.current_appraisal.total_value
+            self.valid_input = True
+        except (customExceptions.InputInvalid, customExceptions.ResponseError) as e:
+            self.appraisal_value = None
+            self.valid_input = False
         self.update_display_model()
 
     def update_display_model(self):
-        if self.mode == Mode.TRACKING:
-            tracker.save_run(self.current_appraisal)
-            self.statistics_model.update_statistics()
-        self.number_of_runs = self.statistics_model.number_of_runs
-        self.average_loot_per_run = self.statistics_model.average_loot_per_run
+        if self.valid_input:
+            if self.mode == Mode.TRACKING:
+                tracker.save_run(self.current_appraisal)
+                self.statistics_model.update_statistics()
+                self.number_of_runs = self.statistics_model.number_of_runs
+                self.average_loot_per_run = self.statistics_model.average_loot_per_run
 
     def switch_mode_callback(self):
         if self.mode == Mode.TRACKING:
@@ -73,3 +81,6 @@ class DisplayModel:
             self.order_type = appraiser.OrderType.BUY
             self.switch_order_type_button_text = "Buy"
         self.appraiser = appraiser.Appraiser(region=self.region_to_query, order_type=self.order_type)
+
+    def delete_last_run(self):
+        self.statistics_model.delete_last_run()

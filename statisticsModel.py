@@ -1,6 +1,7 @@
 import csv
 import math
 from os.path import exists
+
 import tracker
 
 
@@ -13,7 +14,7 @@ class StatisticsModel:
 
     def update_statistics(self):
         if not exists(tracker.LOOT_PATH):
-            return 0
+            raise FileNotFoundError(tracker.LOOT_PATH)
         with open(tracker.LOOT_PATH, 'r', newline='') as csvfile:
             reader = csv.DictReader(csvfile, delimiter=',', quotechar='|')
             total = 0
@@ -24,3 +25,13 @@ class StatisticsModel:
         self.number_of_runs = counter
         if counter > 0:
             self.average_loot_per_run = math.floor(total / counter)
+
+    def delete_last_run(self):
+        if not exists(tracker.LOOT_PATH):
+            raise FileNotFoundError(tracker.LOOT_PATH)
+        with open(tracker.LOOT_PATH, 'w+', newline='') as csvfile:
+            content = csvfile.read()
+            last_line = content.rfind('\n')
+            content = content[0:last_line - 1]
+            # csvfile.write(content)
+            print('Deleted ' + content[last_line:-1])
