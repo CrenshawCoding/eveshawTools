@@ -1,5 +1,5 @@
 import enum
-import xml.etree.ElementTree as elementTree
+import json
 
 import requests
 
@@ -34,41 +34,38 @@ class OrderType(enum.Enum):
 
 
 class Appraiser:
-    """This class is used to get marketstats from evemarketer."""
+    """This class is used to get marketstats from eve tycoon."""
 
     # TODO: move enums out of the class
 
-    QUERY_BASE = "https://api.evemarketer.com/ec/marketstat?regionlimit="
+    QUERY_BASE = "https://evetycoon.com/api/v1/market/stats/"
 
-    # loot that has a fixed value (e.g. NPC buy orders) and should not be queried from evemarketer:
+    # loot that has a fixed value (e.g. NPC buy orders) and should not be queried from eve tycoon:
     STATIC_LOOT = {48121: 100000}
 
     def __init__(self, region: Regions = Regions.THE_FORGE, order_type: OrderType = OrderType.BUY):
-        self.query_base = Appraiser.QUERY_BASE + repr(region.value)
+        self.query_base = Appraiser.QUERY_BASE + repr(region.value) + '/'
         self.order_type = order_type
 
     # Returns a dictionary with item ids mapped to their value
-    def appraise_items(self, loot):
+    def appraise_items(self, loot) -> dict:
         query_items = ""
+        item_values = {}
         for item_ID in loot:
             if item_ID not in Appraiser.STATIC_LOOT:  # Filter static loot out
-                query_items += "&typeid=" + item_ID
-        query = self.query_base + query_items
+                json_response = self.appraise_item(item_ID)
+                item_values[item_ID] = json_response['maxBuy'] if self.order_type == OrderType.BUY else json_response['minSell']
+        return item_values
+    
+    def appraise_item(self, item_id):
+        query = self.query_base + str(item_id)
         response = requests.get(query)
         if response.status_code != 200:
             print("Bad response!\n" + repr(response))
             raise customExceptions.ResponseError
-        root = elementTree.fromstring(response.content)
-        item_values = {}
-        for child in root[0]:
-            item_id = child.attrib["id"]
-            if self.order_type == OrderType.BUY:
-                item_values[item_id] = float(child.find('buy').find('max').text)
-            elif self.order_type == OrderType.SELL:
-                item_values[item_id] = float(child.find('sell').find('min').text)
-        return item_values
+        return json.loads(response.content)
 
-    def generate_appraisal(self, loot_quantity: dict):
+    def generate_appraisal(self, loot_quantity: dict) -> Appraisal:
         database_controller = databaseController.DatabaseController()
         item_drops = []
         loot_value = self.appraise_items(loot_quantity)
@@ -82,6 +79,7 @@ class Appraiser:
                 print("Was not able to find item id " + repr(item_id) + " continuing.")
                 continue
         appraisal = Appraisal(item_drops)
+        print('Appraisal value: ' + str(appraisal.total_value))
         if appraisal.total_value > 0:
             return appraisal
         else:

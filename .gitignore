@@ -1,3 +1,7 @@
 db/cached_items.csv
 db/runs*
 todo.txt
+__pycache__/
+db/runs.csv
+db/vaga.csv
+db/runs.csv
